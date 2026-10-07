@@ -1,0 +1,60 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: researchforge_db
+    environment:
+      POSTGRES_USER: research_user
+      POSTGRES_PASSWORD: research_pass
+      POSTGRES_DB: research_db
+    ports:
+      - "5436:5432"
+    volumes:
+      - postgres_research_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U research_user -d research_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - researchforge_network
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    container_name: researchforge_backend
+    ports:
+      - "8001:8000"
+    env_file:
+      - .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./exports:/app/exports
+    networks:
+      - researchforge_network
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: researchforge_frontend
+    ports:
+      - "3001:3000"
+    env_file:
+      - .env
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8001
+    depends_on:
+      - backend
+    networks:
+      - researchforge_network
+    restart: unless-stopped
+
+volumes:
+  postgres_research_data:
+
+networks:
+  researchforge_network:
+    name: researchforge_network

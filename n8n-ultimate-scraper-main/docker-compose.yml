@@ -1,0 +1,29 @@
+version: '3'
+services:
+  n8n:
+    image: n8nio/n8n:1.59.0
+    ports:
+      - "5679:5678"
+    env_file:
+      - .env
+    networks:
+      - custom_network
+    volumes:
+      - n8n_data:/home/node/.n8n
+
+  selenium:
+    image: selenium/standalone-chrome:129.0
+    container_name: selenium_chrome
+    ports:
+      - "4444:4444"
+    env_file:
+      - .env
+    networks:
+      - custom_network
+
+networks:
+  custom_network:
+    driver: bridge
+
+volumes:
+  n8n_data:
